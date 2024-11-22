@@ -2,6 +2,9 @@ package com.example.userService.controller;
 
 
 import com.example.userService.dto.LoginRequest;
+import com.example.userService.dto.LoginResponse;
+import com.example.userService.exception.BadCredentialsException;
+import com.example.userService.exception.UserNameNotFoundException;
 import com.example.userService.model.User;
 import com.example.userService.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,19 +30,22 @@ public class UserController {
 
     }
 
+
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody LoginRequest loginRequest){
+    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest loginRequest) {
+        try {
+            User authenticateUser = userService.authenticate(loginRequest.getUsername(), loginRequest.getPassword());
 
-        User authenticateUser=userService.authenticate(loginRequest.getUsername(),
-                loginRequest.getPassword());
-       /* return ResponseEntity.ok(authenticateUser);*/
-        if (authenticateUser != null) {
-            return ResponseEntity.ok("Login successful");
-        } else {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username or password");
+            LoginResponse response = new LoginResponse(authenticateUser.getUsername(), "Login successful");
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new LoginResponse(null, "Invalid username or password"));
         }
-
     }
 
-
 }
+
+

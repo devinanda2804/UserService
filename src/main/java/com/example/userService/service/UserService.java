@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 @Service
 public class UserService {
 
+
     @Autowired
     private UserRepository userRepository;
 
@@ -30,13 +31,12 @@ public class UserService {
 
     public User authenticate(String username, String password) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UserNameNotFoundException("User not found"));
-
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         if (passwordEncoder.matches(password, user.getPassword())) {
             return user;
         } else {
-            throw new BadCredentialsException("Invalid credentials");
+            throw new RuntimeException("Invalid credentials");
         }
     }
 }
