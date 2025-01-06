@@ -3,12 +3,14 @@ package com.example.userService.controller;
 
 import com.example.userService.dto.LoginRequest;
 import com.example.userService.dto.LoginResponse;
+import com.example.userService.service.TokenBlackList;
 import com.example.userService.exception.BadCredentialsException;
 import com.example.userService.exception.UserNameNotFoundException;
 import com.example.userService.model.User;
 import com.example.userService.service.UserService;
 import com.example.userService.utilities.JwtTokenUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 
 @RestController
@@ -29,6 +32,8 @@ public class UserController {
 
     @Autowired
     private JwtTokenUtil jwtTokenUtil;
+    @Autowired
+    private TokenBlackList tokenBlackList;
 
     @PostMapping("/register")
     public ResponseEntity<User> registerUser(@RequestBody User user){
@@ -107,6 +112,27 @@ public class UserController {
                     .body(new LoginResponse(null, "Invalid username or password", null));
         }
     }
+
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout(HttpServletRequest request) {
+        String token = extractTokenFromRequest(request);
+        if (token != null) {
+            tokenBlackList.blacklistToken(token);
+        }
+        SecurityContextHolder.clearContext();
+        return ResponseEntity.ok("Logout successful. Token invalidated.");
+    }
+
+
+    private String extractTokenFromRequest(HttpServletRequest request) {
+        String authorizationHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
+        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+            return authorizationHeader.substring(7);
+        }
+        return null;
+    }
+
+
 
 
 
